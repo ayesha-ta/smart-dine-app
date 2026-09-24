@@ -194,19 +194,6 @@ class _ScanQrScreenState extends State<ScanQrScreen>
     const double thickness = 4.5;
     const double radius = 20;
 
-    // Determine border radii & positioning
-    BorderRadius borderRadius;
-    if (alignment == Alignment.topLeft) {
-      borderRadius = const BorderRadius.only(topLeft: Radius.circular(radius));
-    } else if (alignment == Alignment.topRight) {
-      borderRadius = const BorderRadius.only(topRight: Radius.circular(radius));
-    } else if (alignment == Alignment.bottomLeft) {
-      borderRadius =
-          const BorderRadius.only(bottomLeft: Radius.circular(radius));
-    } else {
-      borderRadius =
-          const BorderRadius.only(bottomRight: Radius.circular(radius));
-    }
 
     return Align(
       alignment: alignment,

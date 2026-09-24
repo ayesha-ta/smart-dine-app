@@ -16,23 +16,20 @@ class MenuScreen extends StatefulWidget {
 }
 
 class _MenuScreenState extends State<MenuScreen> {
-  final List<MenuItem> _dummyMenuItems = [
-    MenuItem(id: '1', name: 'Chicken karahi', description: 'Spicy chicken curry with tomatoes and fresh green chilies.', price: 1000, category: 'Mains', imagePath: 'https://images.unsplash.com/photo-1603496987351-f84a3ba5ee3f?q=80&w=500&auto=format&fit=crop', isSpicy: true),
-    MenuItem(id: '2', name: 'Seekh Kabab', description: 'Minced meat kebabs cooked on skewers over charcoal.', price: 1200, category: 'Starters', imagePath: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=500&auto=format&fit=crop', isSpicy: false),
-    MenuItem(id: '3', name: 'Naan Basket', description: 'Fresh baked naan bread basket, hot from the tandoor.', price: 200, category: 'Starters', imagePath: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?q=80&w=500&auto=format&fit=crop', isSpicy: false),
-    MenuItem(id: '4', name: 'Iced Coffee', description: 'Refreshing iced coffee with milk and light sweetener.', price: 400, category: 'Drinks', imagePath: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?q=80&w=500&auto=format&fit=crop', isSpicy: false),
-    MenuItem(id: '5', name: 'Mango Lassi', description: 'Creamy mango yogurt drink with a hint of cardamom.', price: 350, category: 'Drinks', imagePath: 'https://images.unsplash.com/photo-1553361371-9b22f78e8b1d?q=80&w=500&auto=format&fit=crop', isSpicy: false),
-    MenuItem(id: '6', name: 'Chocolate Lava Cake', description: 'Warm chocolate cake with a gooey molten center.', price: 600, category: 'Desserts', imagePath: 'https://images.unsplash.com/photo-1624353365286-3f8d62daad51?q=80&w=500&auto=format&fit=crop', isSpicy: false),
-  ];
+  List<MenuItem> get _activeMenuItems {
+    final userProvider = Provider.of<UserProvider>(context);
+    return userProvider.menuItems.where((item) => !userProvider.unavailableMenuItemIds.contains(item.id)).toList();
+  }
 
   String _selectedCategory = 'All';
   String _searchQuery = '';
   final List<String> _categories = ['All', 'Starters', 'Mains', 'Drinks', 'Desserts'];
 
   List<MenuItem> get _filteredMenuItems {
+    final activeItems = _activeMenuItems;
     var items = _selectedCategory == 'All'
-        ? _dummyMenuItems
-        : _dummyMenuItems.where((item) => item.category == _selectedCategory).toList();
+        ? activeItems
+        : activeItems.where((item) => item.category == _selectedCategory).toList();
     if (_searchQuery.isNotEmpty) {
       items = items.where((item) => item.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
     }

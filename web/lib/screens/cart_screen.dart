@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/user_provider.dart';
 import 'checkout_screen.dart';
-import '../models/menu_item.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
@@ -10,6 +10,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
     final items = cart.items.values.toList();
     final keys = cart.items.keys.toList();
     final subtotal = cart.totalAmount;
@@ -98,7 +99,20 @@ class CartScreen extends StatelessWidget {
                                   child: Text('${cartItem.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 ),
                                 GestureDetector(
-                                  onTap: () => cart.addItem(cartItem.menuItem, 1, null),
+                                  onTap: () {
+                                    final maxAvailable = userProvider.getMaxAvailableQuantity(cartItem.menuItem);
+                                    if (cartItem.quantity < maxAvailable) {
+                                      cart.addItem(cartItem.menuItem, 1, null);
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Cannot add more! Kitchen inventory limit of $maxAvailable reached for ${cartItem.menuItem.name}.'),
+                                          backgroundColor: Colors.orangeAccent,
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  },
                                   child: Container(
                                     width: 30, height: 30,
                                     decoration: BoxDecoration(color: const Color(0xFFF08A5D), borderRadius: BorderRadius.circular(8)),

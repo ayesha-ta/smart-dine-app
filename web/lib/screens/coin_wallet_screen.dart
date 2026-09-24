@@ -40,7 +40,10 @@ class CoinWalletScreen extends StatelessWidget {
                   '${user.loyaltyCoins}',
                   style: const TextStyle(color: Colors.white, fontSize: 56, fontWeight: FontWeight.bold),
                 ),
-                const Text('= PKR 100 redeemable value', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(
+                  '= PKR ${(user.loyaltyCoins * 0.5).toStringAsFixed(0)} redeemable value',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -48,7 +51,7 @@ class CoinWalletScreen extends StatelessWidget {
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Text('100 coins = PKR 50 off your bill', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  child: const Text('1 coin = PKR 0.5 off your bill', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ],
             ),

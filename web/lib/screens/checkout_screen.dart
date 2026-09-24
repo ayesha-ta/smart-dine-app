@@ -24,8 +24,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final tax = subtotal * 0.05;
     double total = subtotal + tax;
 
-    if (_useLoyaltyCoins && user.isLoggedIn) {
-      total = (total - user.loyaltyCoins).clamp(0, double.infinity);
+    // 1 coin = PKR 0.5
+    final double coinsValue = user.loyaltyCoins * 0.5;
+    if (_useLoyaltyCoins && user.isRegisteredUser) {
+      total = (total - coinsValue).clamp(0, double.infinity);
     }
 
     return Scaffold(
@@ -65,7 +67,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
                   // Cash option
                   _paymentTile(
-                    icon: Icons.attach_money,
+                    icon: Icons.currency_rupee,
                     title: 'Cash on Table',
                     subtitle: 'Pay when served',
                     value: 'Cash on Table',
@@ -83,7 +85,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const SizedBox(height: 20),
 
                   // Loyalty Coins
-                  if (user.isLoggedIn)
+                  if (user.isRegisteredUser)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
@@ -101,7 +103,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               children: [
                                 const Text('Loyalty Coins', style: TextStyle(fontWeight: FontWeight.bold)),
                                 Text(
-                                  'Balance: ${user.loyaltyCoins} coins = PKR ${user.loyaltyCoins}',
+                                  'Balance: ${user.loyaltyCoins} coins = PKR ${(user.loyaltyCoins * 0.5).toStringAsFixed(0)}',
                                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                                 ),
                               ],
@@ -109,7 +111,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                           Row(
                             children: [
-                              Text('Redeem', style: TextStyle(color: const Color(0xFFF08A5D), fontSize: 13, fontWeight: FontWeight.bold)),
+                              const Text('Redeem', style: TextStyle(color: Color(0xFFF08A5D), fontSize: 13, fontWeight: FontWeight.bold)),
                               Checkbox(
                                 value: _useLoyaltyCoins,
                                 activeColor: const Color(0xFFF08A5D),
@@ -127,9 +129,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   _summaryRow('Subtotal', 'PKR ${subtotal.toInt()}'),
                   const SizedBox(height: 8),
                   _summaryRow('Tax (5%)', 'PKR ${tax.toInt()}'),
-                  if (_useLoyaltyCoins && user.isLoggedIn) ...[
+                  if (_useLoyaltyCoins && user.isRegisteredUser) ...[
                     const SizedBox(height: 8),
-                    _summaryRow('Coins Discount', '- PKR ${user.loyaltyCoins}', accent: true),
+                    _summaryRow('Coins Discount (${user.loyaltyCoins} coins)', '- PKR ${(user.loyaltyCoins * 0.5).toStringAsFixed(0)}', accent: true),
                   ],
                   const Divider(height: 24),
                   _summaryRow('Total', 'PKR ${total.toInt()}', bold: true),
@@ -147,22 +149,77 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               height: 52,
               child: ElevatedButton(
                 onPressed: () {
+                  final Map<String, int> itemQuantities = {};
+                  cart.items.forEach((key, item) {
+                    itemQuantities[item.menuItem.id] = item.quantity;
+                  });
+
+                  // 1. Validate stocks
+                  final canPlace = user.canPlaceOrder(itemQuantities);
+                  if (!canPlace) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: const Text('Ingredient Shortage', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                        content: const Text(
+                          'We are sorry, but some items in your cart exceed current kitchen ingredient stocks.\n\nPlease decrease item quantities in your cart or choose another dish.',
+                          style: TextStyle(height: 1.5),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK', style: TextStyle(color: Color(0xFFF08A5D), fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
+
                   final orderedItems = cart.items.values.map((item) => {
                     'name': '${item.menuItem.name} x ${item.quantity}',
                     'status': 'Pending'
                   }).toList();
 
                   if (_paymentMethod == 'Online Payment') {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => PaymentScreen(totalAmount: total, orderedItems: orderedItems)));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PaymentScreen(
+                          totalAmount: total,
+                          orderedItems: orderedItems,
+                          itemQuantities: itemQuantities,
+                        ),
+                      ),
+                    );
                   } else {
-                    if (_useLoyaltyCoins && user.isLoggedIn) {
-                      Provider.of<UserProvider>(context, listen: false).deductCoins(user.loyaltyCoins, 'Discount Applied', 'Redeemed at checkout');
+                    // Place order and deduct ingredients immediately
+                    Provider.of<UserProvider>(context, listen: false)
+                        .placeOrderWithInventory(user.tableNumber, total, itemQuantities);
+
+                    if (_useLoyaltyCoins && user.isRegisteredUser) {
+                      Provider.of<UserProvider>(context, listen: false)
+                          .deductCoins(user.loyaltyCoins, 'Discount Applied', 'Redeemed at checkout');
                     }
-                    if (total > 2000 && user.isLoggedIn) {
-                      Provider.of<UserProvider>(context, listen: false).addCoins(100, 'Big Spender Bonus', 'Order over PKR 2000');
+                    // Calculate coins earned for this cash order
+                    int coinsEarned = 0;
+                    if (user.isRegisteredUser && total > 2000) {
+                      Provider.of<UserProvider>(context, listen: false)
+                          .addCoins(100, 'Big Spender Bonus', 'Order over PKR 2000');
+                      coinsEarned = 100;
                     }
                     Provider.of<CartProvider>(context, listen: false).clear();
-                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => OrderTrackingScreen(orderedItems: orderedItems)), (r) => false);
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OrderTrackingScreen(
+                          orderedItems: orderedItems,
+                          coinsEarned: coinsEarned,
+                        ),
+                      ),
+                      (r) => false,
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -211,11 +268,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
             ),
-            Radio<String>(
-              value: value,
-              groupValue: _paymentMethod,
-              activeColor: const Color(0xFFF08A5D),
-              onChanged: (val) => setState(() => _paymentMethod = val!),
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              color: isSelected ? const Color(0xFFF08A5D) : Colors.grey,
             ),
           ],
         ),

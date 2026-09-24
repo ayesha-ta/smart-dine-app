@@ -6,7 +6,8 @@ import 'coin_wallet_screen.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final List<Map<String, dynamic>> orderedItems;
-  const OrderTrackingScreen({super.key, this.orderedItems = const []});
+  final int coinsEarned;
+  const OrderTrackingScreen({super.key, this.orderedItems = const [], this.coinsEarned = 0});
 
   @override
   State<OrderTrackingScreen> createState() => _OrderTrackingScreenState();
@@ -175,9 +176,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                             Expanded(
                               child: RichText(
                                 text: TextSpan(
-                                  children: [
-                                    const TextSpan(text: '+26 loyalty coins earned!!\n', style: TextStyle(color: Color(0xFFF08A5D), fontWeight: FontWeight.bold, fontSize: 14, height: 1.5)),
-                                    TextSpan(text: 'New balance: ${user.loyaltyCoins} coins', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                                   children: [
+                                     TextSpan(text: '+${widget.coinsEarned} loyalty coins earned!!\n', style: const TextStyle(color: Color(0xFFF08A5D), fontWeight: FontWeight.bold, fontSize: 14, height: 1.5)),
+                                     TextSpan(text: 'New balance: ${user.loyaltyCoins} coins (= PKR ${(user.loyaltyCoins * 0.5).toStringAsFixed(0)})', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
                                   ],
                                 ),
                               ),
@@ -454,7 +455,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 2),
                           ),
@@ -523,9 +524,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                             Expanded(
                               child: RichText(
                                 text: TextSpan(
-                                  children: [
-                                    const TextSpan(text: '+26 loyalty coins earned!!\n', style: TextStyle(color: Color(0xFFF08A5D), fontWeight: FontWeight.bold, fontSize: 13, height: 1.5)),
-                                    TextSpan(text: 'New balance: ${user.loyaltyCoins} coins', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                                   children: [
+                                     TextSpan(text: '+${widget.coinsEarned} loyalty coins earned!!\n', style: const TextStyle(color: Color(0xFFF08A5D), fontWeight: FontWeight.bold, fontSize: 13, height: 1.5)),
+                                     TextSpan(text: 'New balance: ${user.loyaltyCoins} coins (= PKR ${(user.loyaltyCoins * 0.5).toStringAsFixed(0)})', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
                                   ],
                                 ),
                               ),
@@ -623,7 +624,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                       boxShadow: isActive
                           ? [
                               BoxShadow(
-                                color: _orange.withOpacity(0.35),
+                                color: _orange.withValues(alpha: 0.35),
                                 blurRadius: 8,
                                 spreadRadius: 1,
                               ),
